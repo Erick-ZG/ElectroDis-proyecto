@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 // Controladores
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ClienteController;
 use App\Http\Controllers\Api\ProveedorController;
 use App\Http\Controllers\Api\ProductoController;
@@ -14,9 +15,10 @@ use App\Http\Controllers\Api\MovimientoInventarioController;
 use App\Http\Controllers\Api\OrdenCompraController;
 use App\Http\Controllers\Api\OrdenVentaController;
 
-// === Rutas de Roles y Usuarios (fase anterior) ===
+// === Rutas de Roles y Usuarios ===
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('users', UserController::class);
+Route::apiResource('permissions', PermissionController::class);
 
 // === Rutas Fase 2 ===
 

@@ -11,7 +11,10 @@ class UserController extends Controller
 {
     public function index()
     {
-        return response()->json(User::with('role')->get(), 200);
+        return response()->json(
+            User::with('roles')->get(), // 👈 ahora roles (de Spatie)
+            200
+        );
     }
 
     public function store(Request $request)
@@ -20,18 +23,33 @@ class UserController extends Controller
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:6',
-            'role_id' => 'required|exists:roles,id',
+            'roles' => 'nullable|array',             // 👈 puede venir vacío
+            'roles.*' => 'exists:roles,name',        // 👈 validar nombres de roles de Spatie
         ]);
 
         $data['password'] = Hash::make($data['password']);
+
         $user = User::create($data);
 
-        return response()->json($user->load('role'), 201);
+        // Asignar rol por defecto si no se envió ninguno
+        if (empty($data['roles'])) {
+            $user->assignRole('usuario'); // 👈 rol por defecto
+        } else {
+            $user->assignRole($data['roles']);
+        }
+
+        return response()->json([
+            'user' => $user,
+            'roles' => $user->getRoleNames(),
+        ], 201);
     }
 
     public function show(User $user)
     {
-        return response()->json($user->load('role'), 200);
+        return response()->json([
+            'user' => $user,
+            'roles' => $user->getRoleNames(),
+        ], 200);
     }
 
     public function update(Request $request, User $user)
@@ -40,7 +58,8 @@ class UserController extends Controller
             'name' => 'sometimes|string',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6',
-            'role_id' => 'sometimes|exists:roles,id',
+            'roles' => 'nullable|array',      // 👈 ahora se pasa roles
+            'roles.*' => 'exists:roles,name',
         ]);
 
         if (isset($data['password'])) {
@@ -49,7 +68,19 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return response()->json($user->load('role'), 200);
+        // Actualizar roles
+        if (isset($data['roles'])) {
+            if (empty($data['roles'])) {
+                $user->syncRoles(['usuario']); // 👈 si se manda vacío, le dejamos solo "usuario"
+            } else {
+                $user->syncRoles($data['roles']); // 👈 reemplaza todos los roles actuales
+            }
+        }
+
+        return response()->json([
+            'user' => $user,
+            'roles' => $user->getRoleNames(),
+        ], 200);
     }
 
     public function destroy(User $user)
